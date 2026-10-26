@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: review-system-v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: review-system-v1
+  template:
+    metadata:
+      labels:
+        app: review-system-v1
+    spec:
+      containers:
+        - name: review-system
+          image: mmokshitha/review-system:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
