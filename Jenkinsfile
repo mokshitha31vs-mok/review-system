@@ -16,26 +16,26 @@ pipeline {
 
         stage('Check Python') {
             steps {
-                sh 'python3 --version'
-                sh 'python3 -m pip --version'
+                bat 'python --version'
+                bat 'python -m pip --version'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                sh 'python3 -m pip install -r requirements.txt'
+                bat 'python -m pip install -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'python3 -m pytest -v test_v1.py'
+                bat 'python -m pytest -v test_v1.py'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% .'
             }
         }
 
@@ -48,13 +48,9 @@ pipeline {
                         passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
-                    sh '''
-                        echo "$DOCKER_PASS" | docker login \
-                            --username "$DOCKER_USER" \
-                            --password-stdin
-
-                        docker push "${IMAGE_NAME}:${IMAGE_TAG}"
-
+                    bat '''
+                        docker login -u "%DOCKER_USER%" -p "%DOCKER_PASS%"
+                        docker push %IMAGE_NAME%:%IMAGE_TAG%
                         docker logout
                     '''
                 }
@@ -64,11 +60,11 @@ pipeline {
 
     post {
         success {
-            echo 'V1 Add Review: Build, tests and Docker publishing succeeded.'
+            echo 'V1 Add Review: Tests passed and Docker image published successfully!'
         }
 
         failure {
-            echo 'Pipeline failed. Check the Jenkins Console Output.'
+            echo 'Pipeline failed. Check the Console Output for the exact error.'
         }
     }
 }
