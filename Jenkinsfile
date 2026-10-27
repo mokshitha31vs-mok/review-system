@@ -58,20 +58,20 @@ pipeline {
                     powershell '''
                     $username = $env:DOCKER_USER.Trim()
                     $token = $env:DOCKER_PASS.Trim()
-                    $token | & $env:DOCKER login --username $username --password-stdin
-                    if ($LASTEXITCODE -ne 0) {
-                    throw "Docker Hub login failed. Check Jenkins credentials."
+                    Write-Host "Docker username: $username"
+                    Write-Host "Token length: $($token.Length)"
+                    if ([string]::IsNullOrWhiteSpace($username)) {
+                    throw "Docker username is empty."
                     }
-                    & $env:DOCKER push "$env:IMAGE_NAME`:$env:IMAGE_TAG"
-                    if ($LASTEXITCODE -ne 0) {
-                    throw "Docker Hub push failed."
+                    if ([string]::IsNullOrWhiteSpace($token)) {
+                    throw "Docker token is empty."
                     }
+                    Write-Host "Credential variables are populated."
                 '''
                 }
             }
         }
     }
-
 
     post {
         success {
