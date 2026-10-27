@@ -57,11 +57,20 @@ pipeline {
                     )
                 ]) {
                     powershell '''
-                        $env:DOCKER_PASS | & $env:DOCKER login --username $env:DOCKER_USER --password-stdin
-                        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                        $token = $env:DOCKER_PASS.Trim()
+                        $username = $env:DOCKER_USER.Trim()
+
+                        $token | & $env:DOCKER login --username $username --password-stdin
+
+                        if ($LASTEXITCODE -ne 0) {
+                            exit $LASTEXITCODE
+                        }
 
                         & $env:DOCKER push "$env:IMAGE_NAME`:$env:IMAGE_TAG"
-                        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+                        if ($LASTEXITCODE -ne 0) {
+                            exit $LASTEXITCODE
+                        }
 
                         & $env:DOCKER logout
                     '''
