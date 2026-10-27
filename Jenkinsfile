@@ -46,34 +46,32 @@ pipeline {
                 bat '"%DOCKER%" build -t %IMAGE_NAME%:%IMAGE_TAG% .'
             }
         }
-stage('Push to Docker Hub') {
-    steps {
-        withCredentials([
-            usernamePassword(
-                credentialsId: 'dockerhub-credentials',
-                usernameVariable: 'DOCKER_USER',
-                passwordVariable: 'DOCKER_PASS'
-            )
-        ]) {
-            powershell '''
-                $username = $env:DOCKER_USER.Trim()
-                $token = $env:DOCKER_PASS.Trim()
-
-                $token | & $env:DOCKER login --username $username --password-stdin
-
-                if ($LASTEXITCODE -ne 0) {
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    powershell '''
+                    $username = $env:DOCKER_USER.Trim()
+                    $token = $env:DOCKER_PASS.Trim()
+                    $token | & $env:DOCKER login --username $username --password-stdin
+                    if ($LASTEXITCODE -ne 0) {
                     throw "Docker Hub login failed. Check Jenkins credentials."
-                }
-
-                & $env:DOCKER push "$env:IMAGE_NAME`:$env:IMAGE_TAG"
-
-                if ($LASTEXITCODE -ne 0) {
+                    }
+                    & $env:DOCKER push "$env:IMAGE_NAME`:$env:IMAGE_TAG"
+                    if ($LASTEXITCODE -ne 0) {
                     throw "Docker Hub push failed."
+                    }
+                '''
                 }
-            '''
+            }
         }
     }
-}
+
 
     post {
         success {
