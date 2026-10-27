@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         PYTHON = 'C:\\Users\\MOKSHITHA\\AppData\\Local\\Programs\\Python\\Python311\\python.exe'
+        DOCKER = 'C:\\Users\\MOKSHITHA\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
         IMAGE_NAME = 'mmokshitha/review-system'
         IMAGE_TAG = 'v1'
     }
@@ -33,9 +34,16 @@ pipeline {
             }
         }
 
+        stage('Check Docker Access') {
+            steps {
+                bat '"%DOCKER%" info'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% .'
+                bat '"%DOCKER%" --version'
+                bat '"%DOCKER%" build -t %IMAGE_NAME%:%IMAGE_TAG% .'
             }
         }
 
@@ -48,17 +56,14 @@ pipeline {
                         passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
-                    bat '''
-                        docker login -u "%DOCKER_USER%" --password-stdin < nul
-                    '''
                     powershell '''
-                        $securePassword = ConvertTo-SecureString $env:DOCKER_PASS -AsPlainText -Force
-                        $credential = New-Object System.Management.Automation.PSCredential($env:DOCKER_USER, $securePassword)
-                        $credential.Password | docker login --username $env:DOCKER_USER --password-stdin
+                        $env:DOCKER_PASS | & $env:DOCKER login --username $env:DOCKER_USER --password-stdin
                         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                        docker push "$env:IMAGE_NAME`:$env:IMAGE_TAG"
+
+                        & $env:DOCKER push "$env:IMAGE_NAME`:$env:IMAGE_TAG"
                         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-                        docker logout
+
+                        & $env:DOCKER logout
                     '''
                 }
             }
