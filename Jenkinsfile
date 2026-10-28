@@ -46,6 +46,7 @@ pipeline {
                 bat '"%DOCKER%" build -t %IMAGE_NAME%:%IMAGE_TAG% .'
             }
         }
+
         stage('Push to Docker Hub') {
             steps {
                 withCredentials([
@@ -56,18 +57,36 @@ pipeline {
                     )
                 ]) {
                     powershell '''
-                    $username = $env:DOCKER_USER.Trim()
-                    $token = $env:DOCKER_PASS.Trim()
-                    Write-Host "Docker username: $username"
-                    Write-Host "Token length: $($token.Length)"
-                    if ([string]::IsNullOrWhiteSpace($username)) {
-                    throw "Docker username is empty."
-                    }
-                    if ([string]::IsNullOrWhiteSpace($token)) {
-                    throw "Docker token is empty."
-                    }
-                    Write-Host "Credential variables are populated."
-                '''
+                        $ErrorActionPreference = "Stop"
+
+                        $username = $env:DOCKER_USER.Trim()
+                        $token = $env:DOCKER_PASS.Trim()
+                        $docker = $env:DOCKER
+
+                        if ([string]::IsNullOrWhiteSpace($username)) {
+                            throw "Docker Hub username is empty."
+                        }
+
+                        if ([string]::IsNullOrWhiteSpace($token)) {
+                            throw "Docker Hub token is empty."
+                        }
+
+                        $token | & $docker login --username $username --password-stdin
+
+                        if ($LASTEXITCODE -ne 0) {
+                            throw "Docker Hub login failed."
+                        }
+
+                        Write-Host "Docker Hub login successful."
+
+                        & $docker push "$env:IMAGE_NAME`:$env:IMAGE_TAG"
+
+                        if ($LASTEXITCODE -ne 0) {
+                            throw "Docker Hub image push failed."
+                        }
+
+                        Write-Host "Docker image pushed successfully."
+                    '''
                 }
             }
         }
